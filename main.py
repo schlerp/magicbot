@@ -28,6 +28,7 @@ def setup_bot(discord_token, giphy_token, bot_prefix):
     client = discord.Client()
     bot = commands.Bot(
         command_prefix=commands.when_mentioned_or(bot_prefix), 
+
         case_insensitive=True)
     return client, bot
 
@@ -247,6 +248,7 @@ async def weather(ctx, *, loc='darwin'):
 @commands.check(botcheck)
 @bot.command(pass_context=True)
 async def suggest_cards(ctx, *, card):
+    '''Suggest cards that are often used with this card'''
     card = card.lower()
     for embed in handle_suggest_cards(ctx, card):
         await ctx.send(embed=embed)
@@ -255,9 +257,11 @@ async def suggest_cards(ctx, *, card):
 @commands.check(botcheck)
 @bot.command(pass_context=True)
 async def suggest_decks(ctx, *, card):
+    '''Suggest decks that use this card'''
     card = card.lower()
     for embed in handle_suggest_decks(ctx, card):
         await ctx.send(embed=embed)
+
 
 #============================================================================
 # Run the bot!
