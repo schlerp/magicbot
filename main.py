@@ -6,6 +6,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import Bot
 import requests
+import random
 #import giphy_client
 #from tinydb import TinyDB
 from dotenv import load_dotenv
@@ -173,7 +174,9 @@ def handle_suggest_decks(ctx, card):
         yield embed
 
     else:
-        for deck in card_dict[card]:
+        decks = card_dict[card]
+        random.shuffle(decks)
+        for deck in decks[0:5]:
             deck_id = deck.split('_')[0]
             deck_name = ' - '.join(deck.split(' - ')[1:])
             link = mtggoldfish_link.format(deck_id)
@@ -246,7 +249,7 @@ async def weather(ctx, *, loc='darwin'):
 
 # suggest cards command
 @commands.check(botcheck)
-@bot.command(pass_context=True)
+@bot.command(pass_context=True, aliases=['sc'])
 async def suggest_cards(ctx, *, card):
     '''Suggest cards that are often used with this card'''
     card = card.lower()
@@ -255,7 +258,7 @@ async def suggest_cards(ctx, *, card):
     
 # suggest decks command
 @commands.check(botcheck)
-@bot.command(pass_context=True)
+@bot.command(pass_context=True, aliases=['sd'])
 async def suggest_decks(ctx, *, card):
     '''Suggest decks that use this card'''
     card = card.lower()
