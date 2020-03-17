@@ -1,5 +1,5 @@
 [Unit]
-Description=
+Description=a MTG focused bot for Discord
 After=multi-user.target
 
 [Service]
