@@ -8,12 +8,14 @@ This is jsut the Discord bot. The actual code that built the graphs etc, is in a
 
 ## Installation
 
-> git clone https://github.com/schlerp/magicbot.git
-> cd magicbot
-> venv venv
-> source ./venv/bin/activate
-> pip install -r ./requirements.txt
-> # you can place the following lines in a .env file rather than exporting them
-> export DISCORD_TOKEN='your token!'
-> export BOT_PREFIX="~"
-> python main.py
+```bash
+    git clone https://github.com/schlerp/magicbot.git
+    cd magicbot
+    venv venv
+    source ./venv/bin/activate
+    pip install -r ./requirements.txt
+    # you can place the following lines in a .env file rather than exporting them
+    export DISCORD_TOKEN='your token!'
+    export BOT_PREFIX="~"
+    python main.py
+```
