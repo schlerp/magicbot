@@ -1,18 +1,14 @@
 import os
 import time
 import datetime
-import string
 import discord
 from discord.ext import commands
 from discord.ext.commands import Bot
-import requests
 import random
-#import giphy_client
-#from tinydb import TinyDB
 from dotenv import load_dotenv
-#import gensim.models.word2vec
-import networkx as nx
-import pickle
+
+# import mtg utils
+from mtg_utils import *
 
 #============================================================================
 # Setup
@@ -46,180 +42,6 @@ def botcheck(ctx):
 @bot.event
 async def on_ready():
     print(str(datetime.datetime.now().time()) + " - Connected to Discord API.")
-
-
-#============================================================================
-# Setup magic stuff
-#============================================================================
-
-# set up mtg graph
-G = nx.read_gpickle('./card_network.pkl')
-
-def get_nearest(key, n=10):
-    nearest_neighbours =  sorted(
-        G[key].items(), 
-        key=lambda x: x[1][0]["weight"],
-        reverse=True
-    )[:n]
-    
-    ret = [
-        {
-            'name': string.capwords(x[0]),
-            'score': x[1][0]["weight"],
-            'scryfall': 'https://scryfall.com/search?q=!{0}'.format(x[0].replace(' ', '_'))
-        } for x in nearest_neighbours
-    ]
-    return ret
-
-card_dict = pickle.load(open('./card_dict.pkl', 'rb'))
-deck_dict = pickle.load(open('./deck_dict.pkl', 'rb'))
-
-
-def get_card_image(name, size='normal'):
-    r = requests.get(
-        'https://api.scryfall.com/cards/named?exact={}'.format(name.replace(' ', '_'))
-    )
-
-    # from pprint import pprint
-    # pprint(r.json())
-    
-    try:
-        url = r.json()['image_uris']['normal']
-    except KeyError:
-        url = r.json()['card_faces'][0]['image_uris']['normal']
-    
-    return url
-
-def handle_suggest_cards(ctx, card):
-    try:
-        nearest_neighbours = get_nearest(card, n=5)
-    except KeyError:
-        embed = discord.Embed(title='Related to {}'.format(card), 
-                              description='Card not found in model! [search scryfall?](https://scryfall.com/search?q={0})'.format(card.replace(' ', '_')),
-                              color=0x176cd5)
-        
-        try:
-            embed.set_thumbnail(
-                url=get_card_image(card, size='small')
-            )
-        except:
-            pass
-        
-        embed.set_author(name="Requested by " + str(ctx.message.author), icon_url=ctx.message.author.avatar_url)
-        yield embed
-    else:
-        for neighbour in nearest_neighbours:
-            name = neighbour['name']
-            link = neighbour['scryfall']
-            score = neighbour['score']
-            
-            embed = discord.Embed(
-                title='Related to {}'.format(string.capwords(card)),
-                color=0x176cd5,
-                url='https://scryfall.com/search?q=!{0}'.format(card.replace(' ', '_'))
-            )
-
-            embed.set_thumbnail(
-                url=get_card_image(card, size='small')
-            )
-
-            embed.set_image(
-                url=get_card_image(name)
-            )
-
-            name_link = '[scryfall]({})'.format(
-                link
-            )
-
-            embed.add_field(
-                name='Name', 
-                value=name,
-                inline=True
-            )
-
-            embed.add_field(
-                name='Score', 
-                value='{}'.format(score), 
-                inline=True
-            
-            )
-            embed.add_field(
-                name="Card Info", 
-                value=name_link,
-                inline=True
-            )
-
-            embed.set_author(name="Requested by " + str(ctx.message.author), icon_url=ctx.message.author.avatar_url)
-            yield embed
-
-def handle_suggest_decks(ctx, card):
-    mtggoldfish_link = 'https://www.mtggoldfish.com/deck/visual/{}'
-    metggoldfish_search = 'https://www.mtggoldfish.com/q?utf8=%E2%9C%93&query_string={}'
-    try:
-        card_dict[card]
-    except KeyError:
-
-        embed = discord.Embed(title='Decks for {}'.format(card), 
-                              description='Card not found! [search mtggoldfish?]({})'.format(metggoldfish_search).format(card.replace(' ', '_')),
-                              color=0x176cd5)
-        
-        try:
-            embed.set_thumbnail(
-                url=get_card_image(card, size='small')
-            )
-        except:
-            pass
-            
-        embed.set_author(name="Requested by " + str(ctx.message.author), icon_url=ctx.message.author.avatar_url)
-        yield embed
-
-    else:
-        decks = card_dict[card]
-        random.shuffle(decks)
-        for deck in decks[0:5]:
-            deck_id = deck.split('_')[0]
-            deck_name = ' - '.join(deck.split(' - ')[1:])
-            link = mtggoldfish_link.format(deck_id)
-
-            embed = discord.Embed(
-                title=string.capwords(deck_name),
-                description='Deck for {}'.format(string.capwords(card)),
-                color=0x176cd5,
-                url=link,
-                type='link'
-            )
-
-            embed.set_thumbnail(
-                url=get_card_image(card, size='small')
-            )
-
-            embed.set_author(
-                name="Requested by " + str(ctx.message.author), 
-                icon_url=ctx.message.author.avatar_url
-            )
-
-            # if len(deck_dict[deck]) <= 8:
-
-            #     for deck_item in deck_dict[deck]:
-            #         embed.add_field(
-            #             name='Amount', 
-            #             value=deck_item['amount'], 
-            #             inline=True
-            #         )
-
-            #         embed.add_field(
-            #             name='Card', 
-            #             value=deck_item['card_name'], 
-            #             inline=True
-            #         )
-
-            #         embed.add_field(
-            #             name='Card Info', 
-            #             value='[scryfall]({})'.format(deck_item['scryfall']), 
-            #             inline=True
-            #         )
-
-            yield embed
           
 
 #============================================================================
@@ -234,8 +56,12 @@ async def ping(ctx):
     now = datetime.datetime.utcnow()
     delta = ctx.message.created_at
     pingtime = now-delta
-    embed = discord.Embed(title="Pong! {} ms".format(pingtime), color=0x176cd5)
-    embed.set_author(name="Requested by " + str(ctx.message.author), icon_url=ctx.message.author.avatar_url)
+    embed = discord.Embed(
+        title="Pong! {} ms".format(pingtime), 
+        color=0x176cd5)
+    embed.set_author(
+        name="Requested by " + str(ctx.message.author), 
+        icon_url=ctx.message.author.avatar_url)
     await ctx.send(embed=embed)
 
 
